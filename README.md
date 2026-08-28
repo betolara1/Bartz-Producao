@@ -97,7 +97,12 @@ O projeto pode ser empacotado em um executável único e independente, sem neces
 
 ```bash
 pip install -r requirements.txt pyinstaller
-pyinstaller --onefile --windowed --name ProgramaProducao main.py
+python -m PyInstaller --onefile --windowed --name ProgramaProducao main.py
+```
+
+Ou utilizando o arquivo de especificação já configurado com os hooks do PyMuPDF:
+```bash
+python -m PyInstaller Programa-Producao.spec
 ```
 
 O executável final será gerado em:
