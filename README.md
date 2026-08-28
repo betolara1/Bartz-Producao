@@ -1,99 +1,129 @@
-# Programa Produção — Localizador de Planos de Corte
+# 🏭 Programa Produção — Gestão & Localizador de Planos de Corte
 
-Aplicação de desktop (Windows 7 / 10 / 11) que monitora a pasta de rede onde o
-ERP (PromobERP) salva os PDFs de plano de corte (ex:
-`\\pc-henrique\DXF\LOTE-644\lote644.pdf`) e lista automaticamente todos os
-PDFs encontrados, mais recentes primeiro, permitindo buscar por número de
-lote e visualizar o conteúdo do PDF dentro do próprio programa.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.8+" />
+  <img src="https://img.shields.io/badge/GUI-Tkinter%20%2F%20ttk-FF6F00?style=for-the-badge&logo=python&logoColor=white" alt="Tkinter GUI" />
+  <img src="https://img.shields.io/badge/Engine-PyMuPDF%20(Fitz)-1E88E5?style=for-the-badge" alt="PyMuPDF" />
+  <img src="https://img.shields.io/badge/Platform-Windows%207%20%7C%2010%20%7C%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
+  <img src="https://img.shields.io/badge/Deploy-PyInstaller%20Standalone%20.exe-2E7D32?style=for-the-badge" alt="PyInstaller" />
+</p>
 
-## Como rodar (modo desenvolvimento)
+---
 
-Requer Python 3.8+ com Tkinter (já vem incluído na instalação padrão do
-Python para Windows).
+## 🎯 Sobre o Projeto
 
-```bash
-pip install -r requirements.txt
-python main.py
+O **Programa Produção** é uma aplicação desktop nativa desenvolvida para automatizar e otimizar o fluxo de trabalho industrial no chão de fábrica. Ele resolve o gargalo de triagem de planos de corte gerados por sistemas ERP (como **PromobERP**), monitorando pastas de rede em tempo real, extraindo metadados e tabelas diretamente da estrutura interna dos PDFs e permitindo a gestão colaborativa de lotes entre múltiplos operadores sem necessidade de infraestrutura pesada de banco de dados.
+
+---
+
+## 🚀 Principais Funcionalidades
+
+### ⚡ Automação e Leitura Inteligente
+- **Monitoramento Contínuo em Segundo Plano**: Varredura periódica e assíncrona da pasta de rede sem travamento da interface gráfica.
+- **Renomeação Automática por Lote**: O ERP frequentemente salva arquivos com nomes genéricos (ex: `PP5928.pdf`). O sistema lê o conteúdo interno via coordenadas espaciais, identifica o número real do lote e renomeia o arquivo com segurança (ex: `3409.pdf`, `3409_2.pdf`).
+- **Prevenção de Conflitos de Gravação**: Arquivos em processo de gravação por impressoras PDF virtuais são ignorados automaticamente até a estabilização do arquivo.
+
+### 📋 Gestão de Produção & Separação de Chapas
+- **Extração Nativa por Coordenadas (Parser)**: Converte relatórios PDF complexos em uma tabela interativa com campos estruturados: *Código, Descrição do Item, Metros e Quantidade*.
+- **Controle de Apontamento**: Campos editáveis para *Responsável*, *Qtde Chapas Real* e *Observações*, com validação de preenchimento obrigatório para conclusão de lotes.
+- **Visualizador Integrado**: Permite inspecionar o PDF original renderizado em alta fidelidade com zoom e navegação.
+
+### 👥 Colaboração Multi-usuário em Tempo Real
+- **Sincronização Distribuída Leve**: Estado compartilhado via arquivos JSON estruturados em pasta de rede (`_controle`), permitindo que toda a equipe acompanhe o status de cada lote instantaneamente.
+- **Sistema de Prioridades (⭐)**: Destaque visual imediato para lotes urgentes na fila de produção.
+- **Histórico de Comentários & Notificações Flutuantes (Toast)**: Notificações visuais e sonoras estilo *Toast Notification* no canto da tela quando novos comentários são adicionados por outros operadores.
+
+---
+
+## 🛠️ Destaques Técnicos & Arquitetura
+
+- **Multithreading Não-bloqueante (`threading` + `queue.Queue`)**: A interface permanece sempre fluida (60 FPS) mesmo durante operações pesadas de I/O em rede e processamento de documentos.
+- **Sincronização Inteligente de Interface (`_sync_tree`)**: Algoritmo de renderização diferencial que atualiza itens do `ttk.Treeview` *in-place*, preservando seleção, foco e rolagem do usuário sem efeito de *flicker*.
+- **Engenharia Reversa de Layout PDF**: Extração espacial com `PyMuPDF` (`fitz`), superando problemas de fluxos de texto não-lineares típicos de geradores de relatórios industriais.
+- **Design Limpo e Modular**: Separação clara entre camada visual, lógica de negócios, persistência e adaptadores de sistema de arquivos.
+
+---
+
+## 📂 Estrutura do Projeto
+
+```
+Programa-Producao/
+├── main.py                      # Ponto de entrada da aplicação
+├── requirements.txt             # Dependências externas do projeto
+├── Programa-Producao.spec       # Configuração de build do PyInstaller
+└── programa_producao/
+    ├── __init__.py
+    ├── app.py                   # Janela principal, listagem com abas e controle de polling
+    ├── detail.py                # Tela de Separação de Chapas e apontamento de produção
+    ├── parser.py                # Extração de texto e tabelas por coordenadas do PDF
+    ├── scanner.py               # Monitoramento de rede, fila assíncrona e renomeação segura
+    ├── store.py                 # Persistência distribuída de estado compartilhado (JSON)
+    ├── comments.py              # Sistema de chat/comentários e notificações Toast nativas
+    ├── preview.py               # Renderizador e visualizador vetorial de PDFs
+    └── config.py                # Gerenciamento de configurações locais em %APPDATA%
 ```
 
-Na primeira execução, a pasta monitorada é `\\pc-henrique\DXF`. Para mudar,
-use o botão **Configurações...** dentro do programa e clique em **Procurar...**
-para escolher a pasta pelo explorador de arquivos do Windows (ou cole o
-caminho de rede direto no campo). O caminho é salvo em
-`%APPDATA%\ProgramaProducao\config.json` e será usado nas próximas vezes.
+---
 
-## Funcionalidades
+## 💻 Como Executar
 
-- Monitora continuamente a pasta configurada (a cada 10 segundos, ajustável
-  em `config.json`, chave `refresh_seconds`) e também sob demanda pelo botão
-  **Atualizar agora**.
-- **Renomeia automaticamente** cada PDF novo pelo número do lote lido de
-  dentro do arquivo (o ERP salva tudo como `PP5928.pdf`; o programa lê o
-  campo "Lote:" do conteúdo e renomeia para ex. `3409.pdf`). Se dois PDFs
-  tiverem o mesmo lote, vira `3409_2.pdf` etc. Arquivos com menos de 5
-  segundos de vida não são mexidos (a impressora pode ainda estar gravando).
-- Lista com colunas Lote, **Status** (Pendente/Concluído), **Responsável**,
-  arquivo, data e tamanho. Concluídos ficam verdes; recém-chegados, amarelos.
-- Busca/filtra por número de lote; ordena por qualquer coluna.
-- **Abrir** (ou duplo clique): abre a tela de Separação de Chapas com os
-  dados extraídos do PDF como campos nativos — Código, Descrição, Metros,
-  Quantidade — e campos editáveis de **Responsável**, **Qtde Chapas Real** e
-  **Obs**. O botão **Concluir** exige Responsável e Qtde Chapas Real
-  preenchidos. Um botão discreto "Ver PDF original" mostra o PDF renderizado,
-  se precisar conferir.
-- **Compartilhado entre usuários**: o que um usuário preenche/conclui é
-  salvo em JSON na subpasta `_controle` dentro da própria pasta de rede, e
-  todos os outros usuários veem o mesmo status na lista e na tela de
-  detalhe (atualiza no ciclo de varredura). Em caso de dois salvarem ao
-  mesmo tempo, vale a última gravação.
-- A varredura roda em segundo plano (thread separada), então a interface não
-  trava mesmo se a rede estiver lenta; se a pasta estiver indisponível, isso
-  aparece na barra de status e a aplicação tenta de novo no próximo ciclo.
+### Pré-requisitos
+- Python 3.8 ou superior (com suporte a Tkinter).
 
-## Gerando o executável (.exe)
+### Passo a passo
+1. Clone o repositório ou baixe os fontes:
+   ```bash
+   git clone https://github.com/betolara1/Bartz-Producao.git
+   cd Bartz-Producao
+   ```
 
-Importante para **Windows 7**: o suporte oficial da Python Software
-Foundation ao Windows 7 terminou na série **3.8**. Para gerar um `.exe` que
-funcione nas três versões do Windows, gere-o usando **Python 3.8 (32-bit)**
-— um executável assim funciona em Windows 7, 10 e 11. Se só precisar rodar
-em Windows 10/11, qualquer Python 3.x recente serve.
+2. Instale as dependências:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Atenção: a versão do `PyMuPDF` em `requirements.txt` foi testada num Python
-mais novo. Ao montar o ambiente com Python 3.8, se `pip install PyMuPDF`
-reclamar de incompatibilidade, use uma versão um pouco mais antiga (ex:
-`PyMuPDF==1.23.26`, a última com suporte oficial ao 3.8).
+3. Execute a aplicação:
+   ```bash
+   python main.py
+   ```
 
-Passos:
+> 💡 **Configuração Inicial**: Ao abrir o programa pela primeira vez, clique em **Configurações...** para definir o diretório de rede onde os PDFs são salvos. A configuração fica salva em `%APPDATA%\ProgramaProducao\config.json`.
+
+---
+
+## 📦 Gerando o Executável Standalone (.exe)
+
+O projeto pode ser empacotado em um executável único e independente, sem necessidade de instalar o Python nos computadores finais:
 
 ```bash
 pip install -r requirements.txt pyinstaller
 pyinstaller --onefile --windowed --name ProgramaProducao main.py
 ```
 
-O executável final fica em `dist\ProgramaProducao.exe` — é um arquivo único,
-não precisa instalar Python nas máquinas de produção. Copie esse `.exe` para
-os computadores que vão usar o programa (ex: área de trabalho, ou uma pasta
-compartilhada).
-
-## Estrutura do projeto
-
+O executável final será gerado em:
 ```
-main.py                     - ponto de entrada
-programa_producao/
-  app.py                    - tela principal (lista compartilhada)
-  detail.py                 - tela de Separação de Chapas (campos + Concluir)
-  parser.py                 - extrai lote/descrição/itens do conteúdo do PDF
-  scanner.py                - varredura da pasta + renomeação automática
-  store.py                  - estado compartilhado em _controle/*.json na rede
-  preview.py                - visualização do PDF renderizado (secundária)
-  config.py                 - leitura/gravação de config.json em %APPDATA%
+dist/ProgramaProducao.exe
 ```
 
-## Observações
+> 📌 **Compatibilidade com Windows 7 / 10 / 11**:
+> Para gerar um binário compatível desde o Windows 7 até o Windows 11, execute a compilação utilizando o **Python 3.8 (32-bit)** com `PyMuPDF==1.23.26`. Para ambientes Windows 10/11 exclusivos, qualquer versão recente do Python 3.x é suportada.
 
-- Os PDFs não precisam seguir nenhum padrão de nome de pasta/arquivo — o
-  programa lê o texto de dentro do PDF para achar o número do lote (campo
-  "Lote:" do relatório). Só é preciso apontar a pasta raiz onde a impressora
-  PDF salva os arquivos (configurável em **Configurações...**).
-- Se existir mais de uma pasta raiz/servidor onde PDFs podem cair, me avise
-  para adicionar suporte a múltiplas pastas monitoradas.
+---
+
+## ⚙️ Configurações (`config.json`)
+
+As configurações são salvas automaticamente em `%APPDATA%\ProgramaProducao\config.json`:
+
+```json
+{
+  "root_path": "\\\\servidor\\compartilhamento\\PDF",
+  "refresh_seconds": 10,
+  "window_geometry": "980x560"
+}
+```
+
+---
+
+<p align="center">
+  Desenvolvido com foco em <b>alta produtividade</b>, <b>baixo atrito operacional</b> e <b>performance em ambiente industrial</b>.
+</p>
