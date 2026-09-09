@@ -95,3 +95,49 @@ def mark_concluido(record: dict) -> dict:
     except Exception:
         record["concluido_por"] = ""
     return record
+
+
+def _order_path(root_path: str) -> Path:
+    return Path(root_path) / CONTROL_DIR / "ordem_pendentes.json"
+
+
+def load_pending_order(root_path: str) -> list[str]:
+    """Carrega a lista de arquivos pendentes na ordem definida pelo usuário/PCP."""
+    if not root_path:
+        return []
+    path = _order_path(root_path)
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                saved = json.load(f)
+            if isinstance(saved, dict) and "ordem" in saved and isinstance(saved["ordem"], list):
+                return [str(x) for x in saved["ordem"]]
+            elif isinstance(saved, list):
+                return [str(x) for x in saved]
+        except (OSError, json.JSONDecodeError):
+            pass
+    return []
+
+
+def save_pending_order(root_path: str, order_list: list[str]) -> None:
+    """Salva a ordem dos arquivos pendentes de forma atômica."""
+    if not root_path:
+        return
+    path = _order_path(root_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    user_autor = ""
+    try:
+        user_autor = getpass.getuser()
+    except Exception:
+        user_autor = "Operador"
+
+    payload = {
+        "ordem": order_list,
+        "atualizado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        "atualizado_por": user_autor,
+    }
+    tmp = path.with_suffix(".json.tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
